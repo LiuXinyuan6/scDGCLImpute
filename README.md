@@ -30,7 +30,7 @@ scDGCLImpute: Precise imputation of missing values in scRNA-seq data through dee
 - 采用Splatter R软件包生成完整的模拟数据集，具体参数设置见文章“**表2 Splatter R参数配置详情**”。
 
 # 3. 运行指南
-## 3.1 代码运行需要的必要的包
+## 3.1 配置运行环境
 ```
 joblib==1.3.2
 matplotlib==3.8.1
@@ -53,7 +53,11 @@ scDGCLImpute既可以在命令行中使用，也可以作为 Python 软件包使
 ```bash
 git clone https://github.com/LiuXinyuan6/scDGCLImpute.git
 ```
-3.2.2 使用：训练和插补
+3.2.2 切换运行目录
+```bash
+cd scDGCLImpute
+```
+3.2.3 使用：训练和插补
 ```bash
 python ./train.py --datasets juraket-293t.csv --dropout 0.4
 ```
@@ -66,11 +70,97 @@ python ./train.py --datasets juraket-293t.csv --dropout 0.4
 当训练完成后，模型会自动保存训练好的模型（juraket-293t_model.pt）和嵌入矩阵（juraket-293t_embedding.npy）。同时会根据嵌入矩阵对缺失数据进行插补（imputation.csv）。以上文件均在运行目录中生成。
 
 ## 3.3 Python 软件包方式
+```python
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--dataset', type=str, default='Usoskin')
+    parser.add_argument('--dropout', type=str, default='0') # 缺失率 ？%
+    parser.add_argument('--gpu_id', type=int, default=0)
+    parser.add_argument('--config', type=str, default='config.yaml')
+    args = parser.parse_args()
 
+    assert args.gpu_id in range(0, 8)
+    if torch.cuda.is_available():
+        torch.cuda.set_device(args.gpu_id)
+    else:
+        print("No GPU available, running on CPU")
+    config = yaml.load(open(args.config), Loader=SafeLoader)[args.dataset]
+    torch.manual_seed(config['seed'])
+    random.seed(12345)
+
+    if_training = config['if_training']
+    learning_rate = config['learning_rate']
+    ae_hidden = config['ae_hidden']
+    num_hidden = config['num_hidden']
+    num_proj_hidden = config['num_proj_hidden']
+    activation = ({'relu': F.relu, 'prelu': nn.PReLU()})[config['activation']]
+    base_model = ({'GCNConv': GCNConv, 'GATv2Conv': GATv2Conv})[config['base_model']]
+    num_layers = config['num_layers']
+    pca_num = config['pca_num']
+    k_neighbor = config['k_neighbor']
+    drop_edge_rate_1 = config['drop_edge_rate_1']
+    drop_edge_rate_2 = config['drop_edge_rate_2']
+    drop_feature_rate_1 = config['drop_feature_rate_1']
+    drop_feature_rate_2 = config['drop_feature_rate_2']
+    tau = config['tau']
+    num_epochs = config['num_epochs']
+    weight_decay = config['weight_decay']
+    data_path = config['data_path']
+
+    # 加载数据集
+    normalize_path = data_path + "normalize_d" + args.dropout + ".csv"
+    normalize, cells, genes = load_data(normalize_path)
+
+    # 构建图
+    data = get_adj(normalize, k=k_neighbor, pca= pca_num)
+    print(data.edge_index.shape)
+
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    data = data.to(device)
+
+    encoder = Encoder(data.num_features, num_hidden, activation,
+                      base_model=base_model, k=num_layers).to(device)
+    model = Model(encoder, num_hidden, num_proj_hidden, tau).to(device)
+    print(model)
+
+    # 加载预训练模型
+    is_loadPr = False
+    if is_loadPr:
+        model = torch.load(data_path + args.dataset + '_model.pt')
+        print("使用预训练模型 : " + data_path + args.dataset + '_model.pt')
+
+    optimizer = torch.optim.Adam(
+        model.parameters(), lr=learning_rate, weight_decay=weight_decay)
+
+    start = t()
+    prev = start
+    model_learning = model_learning(model,data)
+
+    if if_training:
+        for epoch in range(1, num_epochs + 1):
+            loss = model_learning.train()
+            # 每隔 10 个 epoch 输出一次
+            if epoch % 10 == 0:
+                now = t()
+                print(f'(T) | Epoch={epoch:03d}, loss={loss:.4f}, '
+                      f'this epoch {now - prev:.4f}, total {now - start:.4f}')
+                prev = now
+
+        model_learning.save_model()
+
+    print("=== Impute ===")
+    needImputed = pd.read_csv(data_path + args.dataset + "_d" + args.dropout + ".csv", index_col=0).T
+    imputed_data, z = model_learning.impute(needImputed, if_training)
+    # 保存插补数据
+    pd.DataFrame(imputed_data.T, index=genes, columns=cells).to_csv(data_path + "imputation.csv")
+    # 保存嵌入矩阵
+    np.save(data_path + args.dataset + "_embedding.npy", z)
+```
+请确保待插补数据集的文件名命名格式为：{数据集名}_d{dropout}.csv和normalize_d{dropout}.csv。
 
 # 4. 可以通过以下方式验证本文的实验结果
 ## 4.1 准确性
-以juraket-293t数据集为例：
+以jurkat-293t数据集为例：
 
 ```python
     data_non_path = r"juraket-293t_d40.csv"
@@ -105,7 +195,7 @@ python ./train.py --datasets juraket-293t.csv --dropout 0.4
 ```python
     ===============
     插补前pccs=0.767
-    插补前l1==0.693
+    插补前l1=0.693
     插补前rmse=5.705
     ===============
     插补后pccs=0.955
