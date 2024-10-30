@@ -163,9 +163,9 @@ if __name__ == '__main__':
 以jurkat-293t数据集为例：
 
 ```python
-    data_non_path = r"juraket-293t_d40.csv"
-    imputed_data_path = "imputation.csv"
-    original_data_path = r"juraket-293t.csv"
+    data_non_path = r".\analyses\juraket-293t_d40.csv"
+    imputed_data_path = ".\analyses\imputation.csv"
+    original_data_path = r".\analyses\juraket-293t.csv"
 
     data_non = pd.read_csv(data_non_path, sep=',', index_col=0).values
     imputed_data = pd.read_csv(imputed_data_path, sep=',', index_col=0).values
@@ -208,8 +208,8 @@ if __name__ == '__main__':
 
 ```python
     label_num = 4
-    X_fea = pd.read_csv(r"normalize_d0.csv",index_col=0).T.values
-    X_fea_1 = pd.read_csv(r"normalize_imputation.csv",index_col=0).T.values
+    X_fea = pd.read_csv(r".\analyses\normalize_d0.csv",index_col=0).T.values
+    X_fea_1 = pd.read_csv(r".\analyses\normalize_imputation.csv",index_col=0).T.values
 
     labels = pd.read_csv(r"label.csv", index_col=0)
     labels = labels.values.squeeze()
