@@ -1,6 +1,6 @@
 # scDGCLImpute
 scDGCLImpute：基于深度图对比表征的scRNA-seq缺失数据精准插补研究<br>
-scDGCLImpute: Precise imputation of missing values in scRNA-seq data through deep contrastive learning on graph representations
+scDGCLImpute：Precise imputation of missing values in scRNA-seq data through deep contrastive learning on graph representations
 # 1. 概述
 单细胞RNA测序（scRNA-seq）技术为解析复杂组织中的细胞异质性和转录组动态提供了前所未有的分辨率。然而，受限于RNA捕获效率低和文库深度不足等技术因素，scRNA-seq数据常常存在缺失值，这对下游分析的准确性造成了显著影响。为了解决这一问题，本研究提出了一种基于深度图对比表征的单细胞RNA-seq 缺失数据插补模型scDGCLImpute (single-cell Deep Graph Contrastive Learning Imputation)。该模型通过构建细胞间K近邻图，利用对比学习策略学习细胞的低维嵌入表征，并基于这些表征计算细胞间的拓扑关系，最终采用局部线性重建原理对缺失值进行插补。在五个不同组织类型的真实scRNA-seq数据集和一个模拟数据集上的评估结果表明，scDGCLImpute 在恢复缺失值、促进细胞聚类以及重建细胞发育轨迹等方面显著优于现有方法，这表明该模型能够有效缓解缺失数据对scRNA-seq分析的负面影响，从而提升下游分析的准确性，促进单细胞转录组学研究的深入开展。
 ![image](https://github.com/user-attachments/assets/51a58f25-9b67-4e16-b5e9-a53f31784c6e)
@@ -46,7 +46,7 @@ torch==2.3.0
 torch_geometric==2.6.1
 ```
 
-scDGCLImpute既可以在命令行中使用，也可以作为 Python 软件包使用。 以下说明可帮助您在本地计算机上快速使用它。
+scDGCLImpute既可以在命令行中使用，也可以作为 Python 软件包使用。 以下说明可帮助您在本地计算机上快速使用它。请确保待插补数据集的文件名命名格式为：{数据集名}_d{dropout}.csv和normalize_d{dropout}.csv。
 
 ## 3.2 命令行方式
 3.2.1 安装：通过克隆的方式安装最新的 GitHub 版本:
@@ -156,9 +156,8 @@ if __name__ == '__main__':
     # 保存嵌入矩阵
     np.save(data_path + args.dataset + "_embedding.npy", z)
 ```
-请确保待插补数据集的文件名命名格式为：{数据集名}_d{dropout}.csv和normalize_d{dropout}.csv。
 
-# 4. 可以通过以下方式验证本文的实验结果
+# 4. 验证本文的实验结果
 ## 4.1 准确性
 以jurkat-293t数据集为例：
 
@@ -220,11 +219,11 @@ if __name__ == '__main__':
 
 
     print("===")
-    print("K-means插补前ARI: {:.3f}".format(ari_kmeans_ori)
-    print("K-means插补前NMI: {:.3f}".format(nmi_kmeans_ori)
+    print("K-means插补前ARI: {:.3f}".format(ari_kmeans_ori))
+    print("K-means插补前NMI: {:.3f}".format(nmi_kmeans_ori))
     print("---")
-    print("K-means插补后ARI: {:.3f}".format(ari_kmeans_imp)
-    print("K-means插补后NMI: {:.3f}".format(nmi_kmeans_imp)
+    print("K-means插补后ARI: {:.3f}".format(ari_kmeans_imp))
+    print("K-means插补后NMI: {:.3f}".format(nmi_kmeans_imp))
 ```
 输出结果：
 ```python
