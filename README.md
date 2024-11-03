@@ -67,7 +67,7 @@ python ./train.py --datasets juraket-293t.csv --dropout 0.4
 ```--gpu_id```   是否使用GPU训练，默认为0。
 ```--config```   指定配置文件，默认为config.yaml。
 
-当训练完成后，模型会自动保存训练好的模型（juraket-293t_model.pt）和嵌入矩阵（juraket-293t_embedding.npy）。同时会根据嵌入矩阵对缺失数据进行插补（imputation.csv）。以上文件均在运行目录中生成。
+当训练完成后，模型会自动保存训练好的模型（{数据集名}_model.pt）和嵌入矩阵（{数据集名}_embedding.npy）。同时会根据嵌入矩阵对缺失数据进行插补（imputation.csv）。以上文件均在运行目录中生成。
 
 ## 3.3 Python 软件包方式
 ```python
